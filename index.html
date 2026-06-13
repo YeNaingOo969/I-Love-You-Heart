@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You ❤️</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap"
+        rel="stylesheet">
+    <style>
+        /* CSS resets & custom variables */
+        :root {
+            --bg-color: #030008;
+            --primary-glow: rgba(255, 20, 147, 0.4);
+            --secondary-glow: rgba(138, 43, 226, 0.3);
+            --text-color: #ffffff;
+            --heart-red: #ff3366;
+            --font-display: 'Playfair Display', serif;
+            --font-sans: 'Comfortaa', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+            background-image:
+                radial-gradient(circle at 50% 50%, #15002b 0%, #030008 100%);
+        }
+
+        /* Ambient Glow & Heartbeat */
+        .ambient-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            background: radial-gradient(circle at center, var(--primary-glow) 0%, transparent 60%);
+            opacity: 0.5;
+            animation: pulse-bg 3.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulse-bg {
+            0% {
+                transform: scale(0.92);
+                opacity: 0.35;
+            }
+
+            100% {
+                transform: scale(1.08);
+                opacity: 0.65;
+            }
+        }
+
+        /* Background floating bokeh hearts */
+        .bokeh-container {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .bokeh-heart {
+            position: absolute;
+            color: rgba(255, 51, 102, 0.12);
+            font-size: 20px;
+            filter: blur(1.5px);
+            animation: float-up var(--duration) linear infinite;
+            bottom: -50px;
+            left: var(--left-pos);
+            opacity: 0;
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(0.5);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: var(--max-opacity);
+            }
+
+            90% {
+                opacity: var(--max-opacity);
+            }
+
+            100% {
+                transform: translateY(-110vh) rotate(var(--rot)) scale(var(--scale));
+                opacity: 0;
+            }
+        }
+
+        /* Main Viewport */
+        .main-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+
+        /* 3D Scene Container */
+        .scene3d {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-style: preserve-3d;
+        }
+
+        /* Particles styling wrappers */
+        .particle-wrap {
+            position: absolute;
+            transform-style: preserve-3d;
+            transition: opacity 1s ease;
+            will-change: transform, opacity;
+        }
+
+        .particle-text {
+            display: inline-block;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.3s, text-shadow 0.3s;
+            transform-origin: center;
+        }
+
+        .particle-text:hover {
+            color: #ffffff !important;
+            text-shadow: 0 0 25px #ff69b4, 0 0 50px #ff69b4 !important;
+            transform: scale(1.4);
+        }
+
+        /* Center Glassmorphic Card */
+        .glass-card {
+            position: absolute;
+            width: 340px;
+            max-width: 88vw;
+            padding: 30px 20px;
+            background: rgba(15, 5, 25, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 51, 102, 0.25);
+            border-radius: 24px;
+            box-shadow:
+                0 30px 60px rgba(0, 0, 0, 0.6),
+                inset 0 0 25px rgba(255, 51, 102, 0.15);
+            text-align: center;
+            z-index: 1000;
+            opacity: 0;
+            transform: scale(0.8) translateZ(120px);
+            transition: all 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+
+        .glass-card.show {
+            opacity: 1;
+            transform: scale(1) translateZ(120px);
+            pointer-events: auto;
+        }
+
+        .glass-card h2 {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            color: #fff;
+            margin-bottom: 12px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .glass-card p {
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 20px;
+        }
+
+        .heart-icon {
+            width: 45px;
+            height: 45px;
+            margin: 0 auto 12px;
+            fill: var(--heart-red);
+            filter: drop-shadow(0 0 8px var(--heart-red));
+            animation: heartbeat 1.2s infinite ease-in-out;
+        }
+
+        @keyframes heartbeat {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            25% {
+                transform: scale(1.15);
+            }
+
+            40% {
+                transform: scale(1.05);
+            }
+
+            60% {
+                transform: scale(1.2);
+            }
+        }
+
+        /* Action Buttons */
+        .btn {
+            background: linear-gradient(135deg, #ff3366, #da1b60);
+            border: none;
+            color: white;
+            padding: 10px 28px;
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(255, 51, 102, 0.3);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(255, 51, 102, 0.5);
+            background: linear-gradient(135deg, #ff5e84, #e92b74);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .reveal-btn-container {
+            position: absolute;
+            bottom: 12%;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .reveal-btn-container.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient-bg"></div>
+    <div class="bokeh-container" id="bokeh-container"></div>
+
+    <div class="main-container">
+        <!-- 3D Scene -->
+        <div class="scene3d" id="scene3d">
+            <!-- Glass Card in center -->
+            <div class="glass-card" id="glass-card">
+                <svg class="heart-icon" viewBox="0 0 32 32">
+                    <path
+                        d="M16 28.268c-.413 0-.81-.166-1.107-.46L4.792 17.712C2.378 15.297 2.378 11.37 4.792 8.956c1.173-1.173 2.733-1.82 4.393-1.82s3.22.646 4.393 1.82L16 11.332l2.42-2.376c1.173-1.173 2.733-1.82 4.393-1.82s3.22.646 4.393 1.82c2.414 2.414 2.414 6.34 0 8.756L17.107 27.81c-.297.293-.694.46-1.107.46z" />
+                </svg>
+                <h2 id="card-title">ထာဝရအတွက်... ❤️</h2>
+                <p id="card-text">မင်းနဲ့အတူရှိရတဲ့ စက္ကန့်တိုင်းဟာ ငါ့အတွက်တော့ ကောင်းချီးတစ်ခုပါပဲ။ ငါ့ရဲ့နှလုံးသားဟာ
+                    မင်းတစ်ယောက်တည်းအတွက်ပဲ ထာဝရခုန်လှုပ်နေမှာပါ...</p>
+                <button class="btn" id="close-card-btn">Close</button>
+            </div>
+        </div>
+
+        <!-- Start/Reveal Trigger Button -->
+        <div class="reveal-btn-container" id="btn-container">
+            <button class="btn" id="reveal-btn">Reveal My Heart</button>
+        </div>
+    </div>
+
+    <!-- Background music (romantic ambient piano) - loops automatically -->
+    <audio id="bg-music" loop src="https://assets.mixkit.co/music/preview/mixkit-beautiful-dream-493.mp3"></audio>
+
+    <script>
+        const isMobile = window.innerWidth < 600;
+
+        // Setup background floating bokeh hearts
+        const bokehContainer = document.getElementById('bokeh-container');
+        const totalBokeh = isMobile ? 20 : 35; // Reduce bokeh count on mobile for performance
+        for (let i = 0; i < totalBokeh; i++) {
+            const heart = document.createElement('div');
+            heart.innerHTML = '❤️';
+            heart.className = 'bokeh-heart';
+            heart.style.setProperty('--duration', `${10 + Math.random() * 15}s`);
+            heart.style.setProperty('--left-pos', `${Math.random() * 100}%`);
+            heart.style.setProperty('--scale', `${0.4 + Math.random() * 1.4}`);
+            heart.style.setProperty('--rot', `${-90 + Math.random() * 180}deg`);
+            heart.style.setProperty('--max-opacity', `${0.08 + Math.random() * 0.12}`);
+            heart.style.animationDelay = `${Math.random() * 15}s`;
+            bokehContainer.appendChild(heart);
+        }
+
+        // Define state management
+        // States: 'idle', 'spelling', 'spelled', 'morphing', 'heart'
+        let state = 'idle';
+
+        const scene3d = document.getElementById('scene3d');
+        const revealBtn = document.getElementById('reveal-btn');
+        const btnContainer = document.getElementById('btn-container');
+        const glassCard = document.getElementById('glass-card');
+        const closeCardBtn = document.getElementById('close-card-btn');
+        const bgMusic = document.getElementById('bg-music');
+
+        // Words array to build the 3D heart
+        const words = [
+            "I Love You", "Forever", "Always", "Mine", "Heart",
+            "You & Me", "My Love", "Sweetheart", "Cherish", "Adore",
+            "True Love", "Soulmate", "Amour", "Love", "You", "❤️",
+            "💖", "My Universe", "Infinite", "Together", "My Everything",
+            "Beautiful", "Darling", "Beloved", "Always & Forever", "Devotion",
+            "Destiny", "Angel", "My World", "Eternity", "Perfect", "XOXO"
+        ];
+
+        // 3D Rotation angles
+        let angleY = 0;
+        let angleX = 0;
+        let targetTiltX = 0;
+        let targetTiltY = 0;
+        let currentTiltX = 0;
+        let currentTiltY = 0;
+
+        let mouseX = 0;
+        let mouseY = 0;
+
+        // Handle desktop mouse movement for interactive tilt
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            targetTiltY = (mouseX - window.innerWidth / 2) * 0.0008;
+            targetTiltX = -(mouseY - window.innerHeight / 2) * 0.0008;
+        });
+
+        // Handle mobile touch movement for interactive tilt
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                const touch = e.touches[0];
+                mouseX = touch.clientX;
+                mouseY = touch.clientY;
+
+                targetTiltY = (mouseX - window.innerWidth / 2) * 0.0016; // higher touch sensitivity
+                targetTiltX = -(mouseY - window.innerHeight / 2) * 0.0016;
+            }
+        });
+
+        // Initialize particles array
+        const particles = [];
+        const numPoints = isMobile ? 180 : 250; // slightly fewer points on mobile for responsiveness
+
+        // Define letters of "I LOVE YOU" (with hearts for spaces)
+        const introLayout = [
+            { text: "I", color: "#fff" },
+            { text: "❤️", color: "var(--heart-red)", isHeart: true },
+            { text: "L", color: "#fff" },
+            { text: "O", color: "#fff" },
+            { text: "V", color: "#fff" },
+            { text: "E", color: "#fff" },
+            { text: "❤️", color: "var(--heart-red)", isHeart: true },
+            { text: "Y", color: "#fff" },
+            { text: "O", color: "#fff" },
+            { text: "U", color: "#fff" }
+        ];
+
+        // Setup particles structure
+        function initParticles() {
+            const scale = isMobile ? 8.5 : 14;
+            const step = isMobile ? 28 : 50;
+
+            for (let i = 0; i < numPoints; i++) {
+                // Generate 3D coordinates on a Heart Shell
+                const u = Math.acos(-1 + (2 * i) / numPoints); // 0 to PI
+                const v = i * 2.39996; // Golden spiral angle
+
+                const sinU = Math.sin(u);
+                const cosU = Math.cos(u);
+
+                // 3D Heart equations
+                const r = 16 * Math.pow(sinU, 3);
+                const tx = r * Math.sin(v);
+                const tz = r * Math.cos(v);
+                const ty = -(13 * cosU - 5 * Math.cos(2 * u) - 2 * Math.cos(3 * u) - Math.cos(4 * u));
+
+                // Scale coordinate layout
+                const targetX = tx * scale;
+                const targetY = ty * scale;
+                const targetZ = tz * scale;
+
+                // Create DOM structure (wrap for positioning, child text for scaling hover effect)
+                const el = document.createElement('div');
+                el.className = 'particle-wrap';
+
+                const textEl = document.createElement('div');
+                textEl.className = 'particle-text';
+                el.appendChild(textEl);
+
+                let startX = 0;
+                let startY = 0;
+                let startZ = 0;
+                let wordText = "";
+                let isIntro = false;
+                let hue = 335 + Math.random() * 35; // HSL pinks/reds
+
+                // If it's one of the first few particles, map it to the intro spelling text
+                if (i < introLayout.length) {
+                    isIntro = true;
+                    wordText = introLayout[i].text;
+                    textEl.style.fontFamily = "var(--font-display)";
+                    textEl.style.fontWeight = "bold";
+
+                    // Intro initial flat coordinates (spaced out horizontally in the center)
+                    startX = (i - (introLayout.length - 1) / 2) * step;
+                    startY = 0;
+                    startZ = 0;
+                } else {
+                    // Normal heart words
+                    wordText = words[i % words.length];
+                    // Explode out from center
+                    startX = (Math.random() - 0.5) * (isMobile ? 50 : 80);
+                    startY = (Math.random() - 0.5) * (isMobile ? 50 : 80);
+                    startZ = (Math.random() - 0.5) * (isMobile ? 50 : 80);
+                }
+
+                textEl.innerHTML = wordText;
+
+                // Styling base
+                if (wordText === "❤️" || wordText === "💖") {
+                    textEl.style.color = "var(--heart-red)";
+                    textEl.style.textShadow = "0 0 15px rgba(255, 51, 102, 0.8)";
+                    textEl.style.fontSize = isMobile ? `${12 + Math.random() * 6}px` : `${16 + Math.random() * 8}px`;
+                } else if (isIntro) {
+                    textEl.style.color = introLayout[i].color;
+                    textEl.style.fontSize = isMobile ? "1.8rem" : "3.2rem";
+                    textEl.style.textShadow = introLayout[i].isHeart
+                        ? "0 0 18px var(--heart-red)"
+                        : "0 0 15px rgba(255,255,255,0.8)";
+                } else {
+                    textEl.style.color = `hsl(${hue}, 100%, 75%)`;
+                    textEl.style.textShadow = `0 0 8px hsl(${hue}, 100%, 60%)`;
+                    textEl.style.fontSize = isMobile ? `${8 + Math.random() * 5}px` : `${11 + Math.random() * 8}px`;
+                }
+
+                // Hide initially
+                el.style.opacity = 0;
+                scene3d.appendChild(el);
+
+                particles.push({
+                    el: el,
+                    textEl: textEl,
+                    isIntro: isIntro,
+                    startX: startX,
+                    startY: startY,
+                    startZ: startZ,
+                    targetX: targetX,
+                    targetY: targetY,
+                    targetZ: targetZ,
+                    x: startX,
+                    y: startY,
+                    z: startZ,
+                    opacity: 0,
+                    targetOpacity: isIntro ? 1 : (0.35 + Math.random() * 0.55)
+                });
+            }
+        }
+
+        // Start Intro spelling sequence
+        function startSpelling() {
+            state = 'spelling';
+
+            // Start audio if browser allows
+            bgMusic.volume = 0.45;
+            bgMusic.play().catch(() => { });
+
+            let currentLetterIdx = 0;
+            const interval = setInterval(() => {
+                if (currentLetterIdx < introLayout.length) {
+                    const p = particles[currentLetterIdx];
+                    p.opacity = 1;
+                    p.el.style.opacity = 1;
+                    p.el.style.transform = `translate3d(${p.startX}px, ${p.startY}px, ${p.startZ}px)`;
+
+                    currentLetterIdx++;
+                } else {
+                    clearInterval(interval);
+                    state = 'spelled';
+
+                    // Show the "Reveal My Heart" button
+                    setTimeout(() => {
+                        btnContainer.classList.add('show');
+                    }, 800);
+                }
+            }, 300); // Letter delay
+        }
+
+        // Morph all particles to form the 3D heart
+        let morphProgress = 0;
+        function startMorphing() {
+            state = 'morphing';
+            btnContainer.classList.remove('show');
+
+            const duration = 1800; // ms
+            const startTime = performance.now();
+
+            function updateMorph(currentTime) {
+                const elapsed = currentTime - startTime;
+                morphProgress = Math.min(elapsed / duration, 1);
+
+                // Easing curve (easeInOutCubic)
+                const t = morphProgress < 0.5
+                    ? 4 * morphProgress * morphProgress * morphProgress
+                    : 1 - Math.pow(-2 * morphProgress + 2, 3) / 2;
+
+                particles.forEach((p) => {
+                    if (p.isIntro) {
+                        // Blend font size down to fit heart size
+                        const startSize = isMobile ? 1.8 : 3.2;
+                        const targetSize = isMobile ? 0.9 : 1.2;
+                        const currentSize = startSize - (t * (startSize - targetSize));
+                        p.textEl.style.fontSize = `${currentSize}rem`;
+
+                        // Morph coordinates
+                        p.x = p.startX + (p.targetX - p.startX) * t;
+                        p.y = p.startY + (p.targetY - p.startY) * t;
+                        p.z = p.startZ + (p.targetZ - p.startZ) * t;
+                    } else {
+                        // Fade in and morph out non-intro words
+                        p.opacity = p.targetOpacity * t;
+                        p.el.style.opacity = p.opacity;
+
+                        p.x = p.startX + (p.targetX - p.startX) * t;
+                        p.y = p.startY + (p.targetY - p.startY) * t;
+                        p.z = p.startZ + (p.targetZ - p.startZ) * t;
+                    }
+                });
+
+                if (morphProgress < 1) {
+                    requestAnimationFrame(updateMorph);
+                } else {
+                    state = 'heart';
+                    // Show the central sweet message card
+                    setTimeout(() => {
+                        glassCard.classList.add('show');
+                    }, 800);
+                }
+            }
+            requestAnimationFrame(updateMorph);
+        }
+
+        // Main animation loop
+        const maxZ = 16 * (isMobile ? 8.5 : 14); // equation scaling max limit
+
+        function animate() {
+            if (state === 'heart' || state === 'morphing') {
+                // Rotation speed
+                angleY += isMobile ? 0.007 : 0.0055; // slightly faster spin on mobile
+
+                // Mouse/Touch tilt tracking (lerp)
+                currentTiltX += (targetTiltX - currentTiltX) * 0.05;
+                currentTiltY += (targetTiltY - currentTiltY) * 0.05;
+
+                angleX = currentTiltX;
+            }
+
+            particles.forEach((p) => {
+                if (p.opacity > 0) {
+                    let rx = p.x;
+                    let ry = p.y;
+                    let rz = p.z;
+
+                    if (state === 'heart') {
+                        // 3D Matrix rotation
+                        // 1. Rotate Y (horizontal spin + touch tilt)
+                        const cosY = Math.cos(angleY + currentTiltY);
+                        const sinY = Math.sin(angleY + currentTiltY);
+                        const x1 = p.targetX * cosY - p.targetZ * sinY;
+                        const z1 = p.targetX * sinY + p.targetZ * cosY;
+
+                        // 2. Rotate X (vertical tilt)
+                        const cosX = Math.cos(angleX);
+                        const sinX = Math.sin(angleX);
+
+                        rx = x1;
+                        ry = p.targetY * cosX - z1 * sinX;
+                        rz = p.targetY * sinX + z1 * cosX;
+                    } else if (state === 'morphing') {
+                        // Blend between initial positions and current dynamic rotation
+                        const cosY = Math.cos(angleY * morphProgress);
+                        const sinY = Math.sin(angleY * morphProgress);
+                        const tx = p.targetX * cosY - p.targetZ * sinY;
+                        const tz = p.targetX * sinY + p.targetZ * cosY;
+
+                        rx = p.startX + (tx - p.startX) * morphProgress;
+                        ry = p.startY + (p.targetY - p.startY) * morphProgress;
+                        rz = p.startZ + (tz - p.startZ) * morphProgress;
+                    }
+
+                    // Apply translation coordinates to wrapper
+                    p.el.style.transform = `translate3d(${rx}px, ${ry}px, ${rz}px)`;
+
+                    // Depth cue opacity shading (closer is opaque, further is transparent)
+                    const normalizedZ = (rz + maxZ) / (2 * maxZ);
+                    const depthOpacity = 0.25 + (normalizedZ * 0.75);
+                    p.el.style.opacity = p.opacity * depthOpacity;
+                    p.el.style.zIndex = Math.round(rz + 1000);
+                }
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // Auto trigger sequence when page loads
+        window.addEventListener('load', () => {
+            initParticles();
+            setTimeout(startSpelling, 800);
+            animate();
+        });
+
+        // Event listeners
+        revealBtn.addEventListener('click', () => {
+            bgMusic.play().catch(() => { });
+            startMorphing();
+        });
+
+        closeCardBtn.addEventListener('click', () => {
+            glassCard.classList.remove('show');
+            setTimeout(() => {
+                glassCard.style.pointerEvents = 'none';
+            }, 500);
+        });
+
+        // Clicking/touching anywhere on the screen background re-shows the card
+        document.body.addEventListener('click', (e) => {
+            if (state === 'heart' && e.target === document.body && !glassCard.classList.contains('show')) {
+                glassCard.style.pointerEvents = 'auto';
+                glassCard.classList.add('show');
+            }
+        });
+        document.body.addEventListener('touchstart', (e) => {
+            if (state === 'heart' && e.target === document.body && !glassCard.classList.contains('show')) {
+                glassCard.style.pointerEvents = 'auto';
+                glassCard.classList.add('show');
+            }
+        });
+    </script>
+</body>
+
+</html>
